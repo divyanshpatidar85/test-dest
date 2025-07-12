@@ -1,0 +1,48 @@
+steps:
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Debug: List artifact contents to verify
+      ls -la $(System.DefaultWorkingDirectory)/dev-repo/
+
+      # Clone or initialize the test-dest repository
+      if [ -d "test-repo" ]; then
+        rm -rf test-repo
+      fi
+      git clone https://github.com/divyanshpatidar85/test-dest.git test-repo || {
+        mkdir test-repo
+        cd test-repo
+        git init
+        git remote add origin https://github.com/divyanshpatidar85/test-dest.git
+      }
+      cd test-repo
+
+      # Ensure the main branch exists
+      git checkout main || git checkout -b main
+
+      # Copy contents from the dev-repo artifact, excluding .git directory
+      cp -r $(System.DefaultWorkingDirectory)/dev-repo/* .
+      rm -rf .git  # Remove existing .git directory to avoid history conflicts
+
+      # Reinitialize Git repository
+      git init
+      git remote add origin https://github.com/divyanshpatidar85/test-dest.git
+
+      # Configure Git user
+      git config user.email "divyanshpatidar85@gmail.com"
+      git config user.name "Azure Pipelines"
+
+      # Add, commit, and push changes
+      git add .
+      git commit -m "Cloned dev repo to test-dest repo via Azure Pipelines" || echo "No changes to commit"
+      git push -f origin main
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+  env:
+    GIT_HTTP_USER_AGENT: 'AzurePipelines'
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+  authentication:
+    scheme: 'Token'
+    parameters:
+      endpoint: '<your-github-service-connection-name>'  # Replace with your service connection name
+  displayName: 'Clone dev repo to test-dest repo'
