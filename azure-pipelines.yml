@@ -1,0 +1,18 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+  persistCredentials: true  # Allows Git commands to use credentials
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.SourcesDirectory)'
+    artifact: 'dev-repo'
+    publishLocation: 'pipeline'
+  displayName: 'Publish dev repository as artifact'
